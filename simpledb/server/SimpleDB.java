@@ -30,6 +30,8 @@ public class SimpleDB {
    private static BufferMgr   bm;
    private static LogMgr      logm;
    private static MetadataMgr mdm;
+     
+   
    
    /**
     * Initializes the system.
@@ -47,6 +49,7 @@ public class SimpleDB {
          tx.recover();
       }
       initMetadataMgr(isnew, tx);
+      
       tx.commit();
    }
    
@@ -78,8 +81,10 @@ public class SimpleDB {
    public static void initFileLogAndBufferMgr(String dirname) {
       initFileAndLogMgr(dirname);
       bm = new BufferMgr(BUFFER_SIZE);
+      
+      
    }
-   
+
    /**
     * Initializes metadata manager.
     * @param isnew an indication of whether a new
@@ -94,6 +99,8 @@ public class SimpleDB {
    public static BufferMgr   bufferMgr() { return bm; }
    public static LogMgr      logMgr()    { return logm; }
    public static MetadataMgr mdMgr()     { return mdm; }
+   
+
    
    /**
     * Creates a planner for SQL commands.

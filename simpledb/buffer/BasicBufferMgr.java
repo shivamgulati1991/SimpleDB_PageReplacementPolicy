@@ -1,5 +1,7 @@
 package simpledb.buffer;
 
+import java.util.HashMap;
+
 import simpledb.file.*;
 
 /**
@@ -10,6 +12,7 @@ import simpledb.file.*;
 class BasicBufferMgr {
    private Buffer[] bufferpool;
    private int numAvailable;
+   private HashMap<Block, Buffer> bufferPoolMap; 
    
    /**
     * Creates a buffer manager having the specified number 
@@ -26,6 +29,7 @@ class BasicBufferMgr {
     */
    BasicBufferMgr(int numbuffs) {
       bufferpool = new Buffer[numbuffs];
+      bufferPoolMap = new HashMap<Block,Buffer>();
       numAvailable = numbuffs;
       for (int i=0; i<numbuffs; i++)
          bufferpool[i] = new Buffer();
@@ -35,8 +39,67 @@ class BasicBufferMgr {
     * Flushes the dirty buffers modified by the specified transaction.
     * @param txnum the transaction's id number
     */
+   
+   private Buffer findLRM()
+   {
+	   if (numAvailable>0)
+	   {
+	   Buffer modBuff=null;
+	   int chkModified=0;
+	   int modLeastLSN=Integer.MAX_VALUE;
+	   
+	   
+	   //check if all modified
+	   for (Buffer buff : bufferpool){
+		 if (!buff.isPinned()){
+		   if (buff.getLSN()>=0)
+		   {
+			   chkModified=1;
+		   }
+		 }
+	   }
+	   if (chkModified==0)
+	   {
+		      for (Buffer buff : bufferpool)
+		       if (!buff.isPinned() && buff.getLSN()==-1)
+		       {   System.out.println("1: "+buff);
+		    	   
+		       return buff;
+		       }
+	   }
+	   else
+	   {
+		    //  for (Buffer buff : bufferpool)
+		      //    if (!buff.isPinned())
+		        //  {	  System.out.println(modBuff);
+		          //return buff;}
+	   
+	   
+	   //find all/any modified page with lowest LSN
+	   for (Buffer buff : bufferpool)
+	   {
+		 if (!buff.isPinned() && buff.getLSN()>=0)
+		 {
+			   // check if the LSN is the least, then replace it for the buffer
+			   // save the least LSN value in modLeaseLSN and buffer in modBuff
+			   //this will result in the buffer with lease LSN
+			   if(buff.getLSN()<modLeastLSN && buff.getLSN()>=0)
+			   {
+				   modLeastLSN=buff.getLSN();
+				   modBuff=buff;
+			   }
+		   
+		}
+	   }	
+	   System.out.println(modBuff);
+	     return modBuff;
+	   }
+	   }
+		      return null;		 
+   }
    synchronized void flushAll(int txnum) {
-      for (Buffer buff : bufferpool)
+	   //for (Buffer buff : bufferpool)
+	   for (Buffer buff : bufferPoolMap.values())
          if (buff.isModifiedBy(txnum))
          buff.flush();
    }
@@ -56,11 +119,16 @@ class BasicBufferMgr {
          buff = chooseUnpinnedBuffer();
          if (buff == null)
             return null;
+         	if(buff.block()!= null){ 	 
+        	 bufferPoolMap.remove(buff.block());
+         	}
          buff.assignToBlock(blk);
       }
       if (!buff.isPinned())
          numAvailable--;
+      bufferPoolMap.put(blk, buff);
       buff.pin();
+      
       return buff;
    }
    
@@ -77,7 +145,11 @@ class BasicBufferMgr {
       Buffer buff = chooseUnpinnedBuffer();
       if (buff == null)
          return null;
+   		if(buff.block()!= null){ 	 
+   			bufferPoolMap.remove(buff.block());
+   		}
       buff.assignToNew(filename, fmtr);
+      bufferPoolMap.put(buff.block(), buff);
       numAvailable--;
       buff.pin();
       return buff;
@@ -91,8 +163,7 @@ class BasicBufferMgr {
       buff.unpin();
       if (!buff.isPinned())
          numAvailable++;
-   }
-   
+   }  
    /**
     * Returns the number of available (i.e. unpinned) buffers.
     * @return the number of available buffers
@@ -111,9 +182,21 @@ class BasicBufferMgr {
    }
    
    private Buffer chooseUnpinnedBuffer() {
-      for (Buffer buff : bufferpool)
-         if (!buff.isPinned())
-         return buff;
-      return null;
+     // for (Buffer buff : bufferpool)
+       //  if (!buff.isPinned())
+         //return buff;
+     // return null;
+	   return findLRM();
+      
+   }
+   public void getStatistics()
+   {
+	   int buffIndex=0;
+	   //for (Buffer buff : bufferpool)
+	   for (Buffer buff : bufferPoolMap.values())
+	   {
+		   ++buffIndex;
+		   System.out.println("Buffer: "+ buff +"  Index: "+ buffIndex + "  Read: "+buff.getBuffReadCount()+"  Write: "+buff.getBuffWriteCount());
+   }
    }
 }

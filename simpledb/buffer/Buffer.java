@@ -19,7 +19,10 @@ public class Buffer {
    private int pins = 0;
    private int modifiedBy = -1;  // negative means not modified
    private int logSequenceNumber = -1; // negative means no corresponding log record
-
+   private int buffWriteCount=0;
+   private int buffReadCount=0;
+   
+   
    /**
     * Creates a new buffer, wrapping a new 
     * {@link simpledb.file.Page page}.  
@@ -45,7 +48,9 @@ public class Buffer {
     * @return the integer value at that offset
     */
    public int getInt(int offset) {
+	   buffReadCount++;
       return contents.getInt(offset);
+      
    }
 
    /**
@@ -57,7 +62,9 @@ public class Buffer {
     * @return the string value at that offset
     */
    public String getString(int offset) {
+	   buffReadCount++;
       return contents.getString(offset);
+      
    }
 
    /**
@@ -79,6 +86,7 @@ public class Buffer {
       if (lsn >= 0)
 	      logSequenceNumber = lsn;
       contents.setInt(offset, val);
+      buffWriteCount++;
    }
 
    /**
@@ -100,6 +108,7 @@ public class Buffer {
       if (lsn >= 0)
 	      logSequenceNumber = lsn;
       contents.setString(offset, val);
+      buffWriteCount++;
    }
 
    /**
@@ -158,6 +167,8 @@ public class Buffer {
    boolean isModifiedBy(int txnum) {
       return txnum == modifiedBy;
    }
+   
+
 
    /**
     * Reads the contents of the specified block into
@@ -187,4 +198,31 @@ public class Buffer {
       blk = contents.append(filename);
       pins = 0;
    }
+
+public int getBuffWriteCount() {
+	return buffWriteCount;
+}
+
+public void setBuffWriteCount(int buffWriteCount) {
+	this.buffWriteCount = buffWriteCount;
+}
+
+public int getBuffReadCount() {
+	return buffReadCount;
+}
+
+public void setBuffReadCount(int buffReadCount) {
+	this.buffReadCount = buffReadCount;
+}
+//get value of modifiedBy variable for buffer.
+//Used in BasicBufferMgr to check if page is modified or not
+int isModified() {
+    return modifiedBy;
+ }
+
+//get LSN number for buffer
+//Used in BasicBufferMgr to get the LSN and compare for algorithm of LRM
+int getLSN() {
+    return logSequenceNumber;
+ }
 }
