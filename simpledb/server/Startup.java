@@ -8,7 +8,7 @@ public class Startup {
       // configure and initialize the database
 	   
       SimpleDB.init(args[0]);
-      SimpleDB.bufferMgr().getStatisticsOutput();
+    //  SimpleDB.bufferMgr().getStatisticsOutput();
       // create a registry specific for the server on the default port
       Registry reg = LocateRegistry.createRegistry(1099);
       
@@ -17,5 +17,6 @@ public class Startup {
       reg.rebind("simpledb", d);
       
       System.out.println("database server ready");
+      
    }
 }

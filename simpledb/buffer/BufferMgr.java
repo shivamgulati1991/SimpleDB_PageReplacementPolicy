@@ -126,4 +126,17 @@ public class BufferMgr {
    {
 	   bufferMgr.getStatistics();
    }
+   
+   public Buffer getMapping(Block blk){
+	   return bufferMgr.getMapping(blk);
+   }
+   
+   public void getMap(){
+	   System.out.println(bufferMgr.poolMap());
+   }
+   
+   public boolean containsMapping (Block blk) {
+	   return bufferMgr.containsMapping(blk);
+	   }
+      
 }

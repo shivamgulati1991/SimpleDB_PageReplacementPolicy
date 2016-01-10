@@ -49,6 +49,7 @@ public class Transaction {
       concurMgr.release();
       myBuffers.unpinAll();
       System.out.println("transaction " + txnum + " committed");
+      SimpleDB.bufferMgr().getStatisticsOutput();
    }
    
    /**

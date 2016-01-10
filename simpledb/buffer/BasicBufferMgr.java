@@ -35,11 +35,9 @@ class BasicBufferMgr {
          bufferpool[i] = new Buffer();
    }
    
-   /**
-    * Flushes the dirty buffers modified by the specified transaction.
-    * @param txnum the transaction's id number
-    */
-   
+
+   //If one more more modified unpinned buffers, choose the one with least positive LSN
+   //If non modified, choose any randomly
    private Buffer findLRM()
    {
 	   if (numAvailable>0)
@@ -62,7 +60,7 @@ class BasicBufferMgr {
 	   {
 		      for (Buffer buff : bufferpool)
 		       if (!buff.isPinned() && buff.getLSN()==-1)
-		       {   System.out.println("1: "+buff);
+		       {   //System.out.println("case1: "+buff);
 		    	   
 		       return buff;
 		       }
@@ -91,7 +89,6 @@ class BasicBufferMgr {
 		   
 		}
 	   }	
-	   System.out.println(modBuff);
 	     return modBuff;
 	   }
 	   }
@@ -118,14 +115,17 @@ class BasicBufferMgr {
       if (buff == null) {
          buff = chooseUnpinnedBuffer();
          if (buff == null)
-            return null;
+        	 throw new BufferAbortException();
+           // return null;
          	if(buff.block()!= null){ 	 
-        	 bufferPoolMap.remove(buff.block());
+         		//remove existing mapping
+         		bufferPoolMap.remove(buff.block());
          	}
          buff.assignToBlock(blk);
       }
       if (!buff.isPinned())
          numAvailable--;
+      //add new mapping
       bufferPoolMap.put(blk, buff);
       buff.pin();
       
@@ -144,11 +144,11 @@ class BasicBufferMgr {
    synchronized Buffer pinNew(String filename, PageFormatter fmtr) {
       Buffer buff = chooseUnpinnedBuffer();
       if (buff == null)
-         return null;
-   		if(buff.block()!= null){ 	 
-   			bufferPoolMap.remove(buff.block());
-   		}
+    	  throw new BufferAbortException();
+         //return null;
+
       buff.assignToNew(filename, fmtr);
+      //add new mapping 
       bufferPoolMap.put(buff.block(), buff);
       numAvailable--;
       buff.pin();
@@ -181,6 +181,7 @@ class BasicBufferMgr {
       return null;
    }
    
+   //call findLRM function to choose unpinned buffer
    private Buffer chooseUnpinnedBuffer() {
      // for (Buffer buff : bufferpool)
        //  if (!buff.isPinned())
@@ -192,11 +193,34 @@ class BasicBufferMgr {
    public void getStatistics()
    {
 	   int buffIndex=0;
-	   //for (Buffer buff : bufferpool)
+	  
 	   for (Buffer buff : bufferPoolMap.values())
 	   {
 		   ++buffIndex;
 		   System.out.println("Buffer: "+ buff +"  Index: "+ buffIndex + "  Read: "+buff.getBuffReadCount()+"  Write: "+buff.getBuffWriteCount());
    }
    }
+   /**
+   * Determines whether the map has a mapping from
+   * the block to some buffer.
+   * @paramblk the block to use as a key
+   * @return true if there is a mapping; false otherwise
+   */
+   boolean containsMapping (Block blk) {
+   return bufferPoolMap.containsKey(blk);
+   }
+   /**
+   * Returns the buffer that the map maps the specified block to.
+   * @paramblk the block to use as a key
+   * @return the buffer mapped to if there is a mapping; null otherwise
+   */
+   Buffer getMapping (Block blk) {
+   return bufferPoolMap.get(blk);
+   }
+   
+   public HashMap<Block, Buffer> poolMap()
+   {
+	   return bufferPoolMap;
+   }
+   
 }

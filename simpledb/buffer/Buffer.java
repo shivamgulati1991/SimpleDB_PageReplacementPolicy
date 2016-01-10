@@ -21,7 +21,7 @@ public class Buffer {
    private int logSequenceNumber = -1; // negative means no corresponding log record
    private int buffWriteCount=0;
    private int buffReadCount=0;
-   
+      
    
    /**
     * Creates a new buffer, wrapping a new 
@@ -222,7 +222,10 @@ int isModified() {
 
 //get LSN number for buffer
 //Used in BasicBufferMgr to get the LSN and compare for algorithm of LRM
-int getLSN() {
+public int getLSN() {
     return logSequenceNumber;
+ }
+public int getPin() {
+    return pins;
  }
 }
